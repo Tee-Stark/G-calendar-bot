@@ -14,11 +14,6 @@ import (
 )
 
 func CreateCalendarEvent(userEmail string, event utils.EventData) error {
-	if userEmail == "" {
-		log.Println("User email is empty")
-		return nil
-	}
-	// log.Println("User email", userEmail)
 	// get the user's access token from redis using userEmail
 	accessToken := GetUserAuthTokens(userEmail)
 	// extract attendees
@@ -69,13 +64,12 @@ func CreateCalendarEvent(userEmail string, event utils.EventData) error {
 	})
 
 	// set user token, and sent updates to all attendees
-	eventCreated, err := newGoogleEvent.ConferenceDataVersion(1).SendUpdates("all").Do()
+	_, err := newGoogleEvent.ConferenceDataVersion(1).SendUpdates("all").Do()
 	if err != nil {
 		log.Printf("Error creating event: %v", err.Error())
 		return err
 	}
 
-	log.Println(eventCreated.ConferenceData.CreateRequest.Status.StatusCode)
 	log.Println("Event created successfully")
 	return nil
 }

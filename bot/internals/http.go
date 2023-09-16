@@ -26,8 +26,6 @@ func OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// log.Printf("State: %s, Cookie.Value: %v", state, cookie)
-
 	if state != cookie.Value {
 		log.Println("Invalid state")
 		http.Redirect(w, r, "/auth-error", http.StatusTemporaryRedirect)
@@ -51,7 +49,6 @@ func OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		State:     utils.UserStates["authSuccess"],
 	}
 	services.SaveUserState(state[8:], authSuccessState)
-	log.Println("Authentication successful")
 
 	http.Redirect(w, r, "/auth-success", http.StatusTemporaryRedirect)
 }

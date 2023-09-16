@@ -86,6 +86,5 @@ func GenerateDateTime(date, time string) (string, error) {
 
 func generateRFC3339(year, month, day, hour, min int) string {
 	dateTime := strconv.Itoa(year) + "-" + strconv.Itoa(month) + "-" + strconv.Itoa(day) + "T" + strconv.Itoa(hour) + ":" + strconv.Itoa(min) + ":00"
-	log.Println("Datetime: ", dateTime)
 	return dateTime
 }

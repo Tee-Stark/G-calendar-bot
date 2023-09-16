@@ -17,7 +17,6 @@ func HandleBot(bot *tgbotapi.BotAPI) {
 
 	updates := bot.GetUpdatesChan(updateConfig)
 	for update := range updates {
-		// log.Println(update.Message.From.UserName, update.Message.Text, update.Message.IsCommand())
 		// if update type is not a message
 		if update.Message == nil {
 			continue

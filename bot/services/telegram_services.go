@@ -65,9 +65,7 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		eventName := update.Message.Text
 		// get user's session ID and update the event associated to it
 		sessionID = GetUserState(username).SessionID
-		log.Println("Session ID: ", sessionID)
 		event := utils.NewEvent() // &utils.EventData{}
-		log.Println("Event: ", event)
 		event.EventName = eventName
 		// save session and state again
 		err := SaveSession(sessionID, event)
@@ -84,9 +82,7 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		eventDesc := update.Message.Text
 		// get user's session ID and update the event associated to it
 		sessionID = GetUserState(username).SessionID
-		log.Println("Session ID: ", sessionID)
 		event := GetSession(sessionID)
-		log.Println("Event: ", event)
 		event.EventDescription = eventDesc
 		// save session and state again
 		userStateData.State = utils.UserStates["createEvent3"]
@@ -245,7 +241,6 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		}
 		// Get event from Redis and create event on Google Calendar
 		// event = GetSession(sessionID)
-		log.Println("Event log", event)
 		err = CreateCalendarEvent(userStateData.UserEmail, *event)
 		if err != nil {
 			log.Printf("An error occured while creating event: %v", err)

@@ -27,7 +27,6 @@ func GetUserAuthTokens(email string) *oauth2.Token {
 		return &oauth2.Token{}
 	}
 	userTokens := utils.DeserializeUserTokenData(tokens)
-	// log.Println("User tokens: ", tokens)
 	return userTokens
 }
 
@@ -37,9 +36,7 @@ func SaveUserState(userName string, userState utils.UserStateData) {
 	saved := Redis.Set(context.Background(), userName, state, 0)
 	if saved.Err() != nil {
 		log.Printf("Error saving user state: %v", saved.Err())
-		// return saved.Err()
 	}
-	// log.Println("User state updated correctly")
 }
 
 func GetUserState(userName string) utils.UserStateData {
@@ -55,21 +52,18 @@ func GetUserState(userName string) utils.UserStateData {
 
 func SaveSession(sessionId string, event *utils.EventData) error {
 	eventData := utils.SerializeEventData(event)
-
-	log.Println("Session to save: ", sessionId, "Event to save: ", eventData)
 	saved := Redis.Set(context.Background(), sessionId, eventData, 0)
 	if saved.Err() != nil {
 		log.Printf("Error saving session: %v", saved.Err())
 		return saved.Err()
 	}
-	log.Println("Session saved correctly")
+	log.Println("Session saved, ID: ", sessionId, "Event saved: ", eventData)
 	return nil
 }
 
 func GetSession(sessionId string) *utils.EventData {
 	event, err := Redis.Get(context.Background(), sessionId).Result()
 
-	log.Println("Get Session: ", event)
 	if err != nil {
 		log.Printf("Error getting session: %v", err)
 		return nil

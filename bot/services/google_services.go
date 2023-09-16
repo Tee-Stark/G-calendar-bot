@@ -31,7 +31,6 @@ func generateState(w http.ResponseWriter, tgUsername string) string {
 		Value:   state,
 		Expires: expiry,
 	}
-	// log.Println(cookie)
 	// http.Delete
 	http.SetCookie(w, &cookie)
 
@@ -65,13 +64,12 @@ func GetUserEmailFromProfile(ctx context.Context, userTokens *oauth2.Token) (str
 		return "", err
 	}
 
-	log.Printf("Body: %s", string(body))
 	err = json.Unmarshal(body, &profile)
 	if err != nil {
 		log.Println("Error while unmarshalling JSON")
 		return "", err
 	}
-	log.Printf("Profile email: %v", profile.Email)
+	log.Printf("User email: %v", profile.Email)
 
 	return profile.Email, nil
 }
