@@ -3,6 +3,7 @@ package internals
 import (
 	"g_calendar_pal/bot/services"
 	"g_calendar_pal/bot/utils"
+	"g_calendar_pal/views"
 	"log"
 	"net/http"
 )
@@ -56,9 +57,11 @@ func OAuthCallbackHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func AuthSuccessHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Authentication successful"))
+	// w.Write([]byte("Authentication successful"))
+	views.RenderAuthResponse(w, "auth.html", "success")
 }
 
 func AuthErrorHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Authentication failed"))
+	// w.Write([]byte("Authentication failed"))
+	views.RenderAuthResponse(w, "auth.html", "")
 }

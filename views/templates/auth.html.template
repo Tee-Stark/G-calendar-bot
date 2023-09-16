@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Google Authentication!</title>
+</head>
+
+<body>
+    {{ if .}}
+    <h1>Google Authentication Successful 🤸‍♂️ <br>Return to Telegram to continue using G_Calendar Pal 🤖</h1>
+    {{ else }}
+    <h1>An error occurred while authenticating with Google 😢 <br>Return to Telegram to try again 🤖</h1>
+    {{ end }}
+</body>
+
+</html>
