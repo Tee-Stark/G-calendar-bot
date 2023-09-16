@@ -36,8 +36,8 @@ func CreateCalendarEvent(userEmail string, event utils.EventData) error {
 
 	// eventID := uuid.New().String()
 	requestID := uuid.New().String()
-	startDateTime := utils.GenerateDateTime(event.EventStartDate, event.EventStartTime)
-	endDateTime := utils.GenerateDateTime(event.EventEndDate, event.EventEndTime)
+	startDateTime, _ := utils.GenerateDateTime(event.EventStartDate, event.EventStartTime)
+	endDateTime, _ := utils.GenerateDateTime(event.EventEndDate, event.EventEndTime)
 
 	Calendar := config.InitCalendar(accessToken)
 
@@ -69,7 +69,7 @@ func CreateCalendarEvent(userEmail string, event utils.EventData) error {
 	})
 
 	// set user token, and sent updates to all attendees
-	eventCreated, err := newGoogleEvent.SendUpdates("all").Do()
+	eventCreated, err := newGoogleEvent.ConferenceDataVersion(1).SendUpdates("all").Do()
 	if err != nil {
 		log.Printf("Error creating event: %v", err.Error())
 		return err
@@ -101,14 +101,16 @@ func CreateCalendarEventHTTP(userEmail string, event utils.EventData) error {
 
 	requestID := uuid.New().String()
 	// event data to submit
+	startDateTime, _ := utils.GenerateDateTime(event.EventStartDate, event.EventStartTime)
+	endDateTime, _ := utils.GenerateDateTime(event.EventEndDate, event.EventEndTime)
 	eventData := map[string]interface{}{
 		"summary": event.EventName,
 		"start": map[string]interface{}{
-			"dateTime": utils.GenerateDateTime(event.EventStartDate, event.EventStartTime),
+			"dateTime": startDateTime,
 			"timeZone": "Africa/Lagos",
 		},
 		"end": map[string]interface{}{
-			"dateTime": utils.GenerateDateTime(event.EventEndDate, event.EventEndTime),
+			"dateTime": endDateTime,
 			"timeZone": "Africa/Lagos",
 		},
 		"description": event.EventDescription,
