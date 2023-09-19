@@ -1,7 +1,9 @@
 package services
 
 import (
+	"fmt"
 	"g_calendar_pal/bot/utils"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -46,38 +48,34 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 	username := update.Message.From.UserName
 
 	switch userStateData.State {
-	case utils.UserStates["createEvent"]:
+	case "0":
 		// create new session and update userStateData
 		sessionID = utils.GenerateShortID()
-		userStateData.State = utils.UserStates["createEvent1"]
+		event := utils.NewEvent()
 		userStateData.SessionID = sessionID
-		// save session and user state
+		resp, err := handleStateResponse(username, userStateData, event)
+		if err != nil {
+			log.Printf("An error occured: %v", err)
+			break
+		}
+		responseText = resp
 
-		SaveUserState(username, userStateData)
-		// err := SaveSession(sessionID, event)
-		// if err != nil {
-		// 	log.Printf("An error occured while saving session: %v", err)
-		// }
-		responseText = utils.StatefulResponseTemplates["createEvent1"]
-
-	case utils.UserStates["createEvent1"]:
+	case "1":
 		// event name is the message sent
 		eventName := update.Message.Text
 		// get user's session ID and update the event associated to it
 		sessionID = GetUserState(username).SessionID
-		event := utils.NewEvent() // &utils.EventData{}
+		event := GetSession(sessionID)
 		event.EventName = eventName
 		// save session and state again
-		err := SaveSession(sessionID, event)
+		resp, err := handleStateResponse(username, userStateData, event)
 		if err != nil {
-			log.Printf("An error occured while saving session: %v", err)
+			log.Printf("An error occured: %v", err)
 			break
 		}
-		userStateData.State = utils.UserStates["createEvent2"]
-		SaveUserState(username, userStateData)
-		responseText = utils.StatefulResponseTemplates["createEvent2"]
+		responseText = resp
 
-	case utils.UserStates["createEvent2"]:
+	case "2":
 		// event description is the message sent
 		eventDesc := update.Message.Text
 		// get user's session ID and update the event associated to it
@@ -85,20 +83,19 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		event := GetSession(sessionID)
 		event.EventDescription = eventDesc
 		// save session and state again
-		userStateData.State = utils.UserStates["createEvent3"]
-		SaveUserState(username, userStateData)
-		err := SaveSession(sessionID, event)
+		resp, err := handleStateResponse(username, userStateData, event)
 		if err != nil {
-			log.Printf("An error occured while saving session: %v", err)
+			log.Printf("An error occured: %v", err)
+			break
 		}
-		responseText = utils.StatefulResponseTemplates["createEvent3"]
+		responseText = resp
 
-	case utils.UserStates["createEvent3"]:
+	case "3":
 		// event start date is the message sent
 		eventStartDate := update.Message.Text
 		_, _, _, err := utils.ParseDate(eventStartDate)
 		if err != nil {
-			responseText = "You entered an invalid date, please try again and stick to the format YYYY-MM-DD"
+			responseText = utils.ErrorResponses["dateError"]
 			userStateData.State = utils.UserStates["createEvent3"]
 			SaveUserState(username, userStateData)
 			break
@@ -108,20 +105,18 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		event := GetSession(sessionID)
 		event.EventStartDate = eventStartDate
 		// save session again
-		err = SaveSession(sessionID, event)
+		resp, err := handleStateResponse(username, userStateData, event)
 		if err != nil {
-			log.Printf("An error occured while saving session: %v", err)
+			log.Printf("An error occured: %v", err)
 		}
-		userStateData.State = utils.UserStates["createEvent4"]
-		SaveUserState(username, userStateData)
-		responseText = utils.StatefulResponseTemplates["createEvent4"]
+		responseText = resp
 
-	case utils.UserStates["createEvent4"]:
+	case "4":
 		// event end date is the message sent
 		eventEndDate := update.Message.Text
 		_, _, _, err := utils.ParseDate(eventEndDate)
 		if err != nil {
-			responseText = "You entered an invalid date, please try again and stick to the format YYYY-MM-DD"
+			responseText = utils.ErrorResponses["dateError"]
 			userStateData.State = utils.UserStates["createEvent4"]
 			SaveUserState(username, userStateData)
 			break
@@ -131,20 +126,19 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		event := GetSession(sessionID)
 		event.EventEndDate = eventEndDate
 		// save session again
-		err = SaveSession(sessionID, event)
+		resp, err := handleStateResponse(username, userStateData, event)
 		if err != nil {
-			log.Printf("An error occured while saving session: %v", err)
+			log.Printf("An error occured: %v", err)
+			break
 		}
-		userStateData.State = utils.UserStates["createEvent5"]
-		SaveUserState(username, userStateData)
-		responseText = utils.StatefulResponseTemplates["createEvent5"]
+		responseText = resp
 
-	case utils.UserStates["createEvent5"]:
+	case "5":
 		// event start time is the message sent
 		eventStartTime := update.Message.Text
 		_, _, err := utils.ParseTime(eventStartTime)
 		if err != nil {
-			responseText = "You entered an invalid time, please try again and stick to the format HH:MM"
+			responseText = utils.ErrorResponses["timeError"]
 			userStateData.State = utils.UserStates["createEvent5"]
 			SaveUserState(username, userStateData)
 			break
@@ -154,15 +148,10 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		event := GetSession(sessionID)
 		event.EventStartTime = eventStartTime
 		// save session again
-		err = SaveSession(sessionID, event)
-		if err != nil {
-			log.Printf("An error occured while saving session: %v", err)
-		}
-		userStateData.State = utils.UserStates["createEvent6"]
-		SaveUserState(username, userStateData)
-		responseText = utils.StatefulResponseTemplates["createEvent6"]
+		resp, err := handleStateResponse(username, userStateData, event)
+		responseText = resp
 
-	case utils.UserStates["createEvent6"]:
+	case "6":
 		// event end time is the message sent
 		eventEndTime := update.Message.Text
 		_, _, err := utils.ParseTime(eventEndTime)
@@ -177,17 +166,14 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		event := GetSession(sessionID)
 
 		event.EventEndTime = eventEndTime
-		err = SaveSession(sessionID, event)
+		resp, err := handleStateResponse(username, userStateData, event)
 		if err != nil {
-			log.Printf("An error occured while saving session: %v", err)
+			log.Printf("An error occured: %v", err)
+			break
 		}
+		responseText = resp
 
-		userStateData.State = utils.UserStates["createEvent7"]
-		SaveUserState(username, userStateData)
-
-		responseText = utils.StatefulResponseTemplates["createEvent7"]
-
-	case utils.UserStates["createEvent7"]:
+	case "7":
 		// event timezone is the message sent
 		eventTimeZone := update.Message.Text
 		// get user's session ID and update the event associated to it
@@ -195,15 +181,14 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		event := GetSession(sessionID)
 		event.EventTimeZone = eventTimeZone
 		// save session again
-		err := SaveSession(sessionID, event)
+		resp, err := handleStateResponse(username, userStateData, event)
 		if err != nil {
-			log.Printf("An error occured while saving session: %v", err)
+			log.Printf("An error occured: %v", err)
+			break
 		}
-		userStateData.State = utils.UserStates["createEvent8"]
-		SaveUserState(username, userStateData)
-		responseText = utils.StatefulResponseTemplates["createEvent8"]
+		responseText = resp
 
-	case utils.UserStates["createEvent8"]:
+	case "8":
 		// event location is the message sent
 		eventLocation := update.Message.Text
 		// get user's session ID and update the event associated to it
@@ -211,15 +196,14 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		event := GetSession(sessionID)
 		event.EventLocation = eventLocation
 		// save session again
-		err := SaveSession(sessionID, event)
+		resp, err := handleStateResponse(username, userStateData, event)
 		if err != nil {
-			log.Printf("An error occured while saving session: %v", err)
+			log.Printf("An error occured: %v", err)
+			break
 		}
-		userStateData.State = utils.UserStates["createEvent9"]
-		SaveUserState(username, userStateData)
-		responseText = utils.StatefulResponseTemplates["createEvent9"]
+		responseText = resp
 
-	case utils.UserStates["createEvent9"]:
+	case "9":
 		// event attendees are the message sent or /retry
 		var eventAttendees string
 		if update.Message.Text == "/retry" {
@@ -234,28 +218,46 @@ func HandleCreateEvent(update tgbotapi.Update, userStateData utils.UserStateData
 		sessionID = GetUserState(username).SessionID
 		event := GetSession(sessionID)
 		event.EventAttendees = strings.Split(eventAttendees, ",")
-		// save session again
-		err := SaveSession(sessionID, event)
-		if err != nil {
-			log.Printf("An error occured while saving session: %v", err)
-		}
 		// Get event from Redis and create event on Google Calendar
-		// event = GetSession(sessionID)
-		err = CreateCalendarEvent(userStateData.UserEmail, *event)
+		err := CreateCalendarEvent(userStateData.UserEmail, *event)
+		// save session again
 		if err != nil {
 			log.Printf("An error occured while creating event: %v", err)
-			responseText = "An error occured while creating event. Please try again later with the /retry command."
+			responseText = utils.ErrorResponses["eventError"]
 			break
 		}
-		userStateData.State = utils.UserStates["eventCreated"]
-		SaveUserState(username, userStateData)
-		responseText = utils.StatefulResponseTemplates["eventCreated"]
+		resp, err := handleStateResponse(username, userStateData, event)
+		if err != nil {
+			log.Printf("An error occured: %v", err)
+			break
+		}
+		responseText = resp
 	}
 
 	textMsg = tgbotapi.NewMessage(update.Message.Chat.ID, responseText)
 	textMsg.ReplyToMessageID = update.Message.MessageID
 
 	return textMsg
+}
+
+func handleStateResponse(username string, stateData utils.UserStateData, event *utils.EventData) (string, error) {
+	err := SaveSession(stateData.SessionID, event)
+	if err != nil {
+		return "", err
+	}
+
+	stateInt, _ := strconv.Atoi(stateData.State)
+	var stateStr string
+	if stateInt == 9 {
+		stateStr = "eventCreated"
+	} else {
+		stateStr = fmt.Sprintf("createEvent%d", stateInt+1)
+	}
+
+	stateData.State = utils.UserStates[stateStr]
+	SaveUserState(username, stateData)
+	responseText := utils.StatefulResponseTemplates[stateStr]
+	return responseText, nil
 }
 
 // func HandleHelp(update tgbotapi.Update) tgbotapi.MessageConfig {
