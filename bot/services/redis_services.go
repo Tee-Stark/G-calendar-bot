@@ -6,22 +6,31 @@ import (
 	"g_calendar_pal/bot/utils"
 	"log"
 
+	"github.com/go-redis/redis/v8"
 	"golang.org/x/oauth2"
 )
 
-var Redis = config.InitRedis()
+type RedisService struct {
+	client *redis.Client
+}
 
-func SaveUserAuthTokens(email string, authTokens *oauth2.Token) {
+func NewRedisService() *RedisService {
+	return &RedisService{
+		client: config.InitRedis(),
+	}
+}
+
+func (r *RedisService) SaveUserAuthTokens(email string, authTokens *oauth2.Token) {
 	tokens := utils.SerializeUserTokenData(authTokens)
 
-	saved := Redis.Set(context.Background(), email, tokens, 0)
+	saved := r.client.Set(context.Background(), email, tokens, 0)
 	if saved.Err() != nil {
 		log.Printf("Error saving user auth tokens: %v", saved.Err().Error())
 	}
 }
 
-func GetUserAuthTokens(email string) *oauth2.Token {
-	tokens, err := Redis.Get(context.Background(), email).Result()
+func (r *RedisService) GetUserAuthTokens(email string) *oauth2.Token {
+	tokens, err := r.client.Get(context.Background(), email).Result()
 	if err != nil {
 		log.Printf("Error getting user authentication tokens: %v", tokens)
 		return &oauth2.Token{}
@@ -30,17 +39,17 @@ func GetUserAuthTokens(email string) *oauth2.Token {
 	return userTokens
 }
 
-func SaveUserState(userName string, userState utils.UserStateData) {
+func (r *RedisService) SaveUserState(userName string, userState utils.UserStateData) {
 	state := utils.SerializeStateData(userState)
 
-	saved := Redis.Set(context.Background(), userName, state, 0)
+	saved := r.client.Set(context.Background(), userName, state, 0)
 	if saved.Err() != nil {
 		log.Printf("Error saving user state: %v", saved.Err())
 	}
 }
 
-func GetUserState(userName string) utils.UserStateData {
-	state, err := Redis.Get(context.Background(), userName).Result()
+func (r *RedisService) GetUserState(userName string) utils.UserStateData {
+	state, err := r.client.Get(context.Background(), userName).Result()
 	if err != nil {
 		log.Printf("Error getting user state: %v", err)
 		return utils.UserStateData{}
@@ -50,9 +59,9 @@ func GetUserState(userName string) utils.UserStateData {
 	return stateData
 }
 
-func SaveSession(sessionId string, event *utils.EventData) error {
+func (r *RedisService) SaveSession(sessionId string, event *utils.EventData) error {
 	eventData := utils.SerializeEventData(event)
-	saved := Redis.Set(context.Background(), sessionId, eventData, 0)
+	saved := r.client.Set(context.Background(), sessionId, eventData, 0)
 	if saved.Err() != nil {
 		log.Printf("Error saving session: %v", saved.Err())
 		return saved.Err()
@@ -61,8 +70,8 @@ func SaveSession(sessionId string, event *utils.EventData) error {
 	return nil
 }
 
-func GetSession(sessionId string) *utils.EventData {
-	event, err := Redis.Get(context.Background(), sessionId).Result()
+func (r *RedisService) GetSession(sessionId string) *utils.EventData {
+	event, err := r.client.Get(context.Background(), sessionId).Result()
 
 	if err != nil {
 		log.Printf("Error getting session: %v", err)
